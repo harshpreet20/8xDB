@@ -139,6 +139,12 @@ footer p{margin:0 0 6px}
   .ev-date{font-size:11px}.ev-time{font-size:10.5px}.ev-src{font-size:8.5px}
   .ev-body{padding:12px}
   .sec-note{margin-left:0;width:100%}
+  .facts{grid-template-columns:1fr 1fr}
+  .facts .fact:last-child:nth-child(odd){grid-column:1 / -1}
+  .wrap{padding-left:14px;padding-right:14px}
+  table{font-size:12px}
+  th,td{padding:7px 8px}
+  .tbl-wrap{margin:0 -14px;width:calc(100% + 28px);border-left:none;border-right:none}
 }
 @media (prefers-reduced-motion:no-preference){
   .ev{transition:background .15s ease}

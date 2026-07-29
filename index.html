@@ -27,11 +27,12 @@
   --neutral:#4A5460;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden;width:100%}
 body{
   margin:0;background:var(--paper);color:var(--ink);
   font-family:'IBM Plex Sans',system-ui,sans-serif;
   font-size:15px;line-height:1.55;
+  overflow-x:hidden;width:100%;
 }
 .wrap{max-width:none;margin:0;padding:0 40px 96px}
 mono,.mono,.ts{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
@@ -144,8 +145,6 @@ footer p{margin:0 0 6px}
   .wrap{padding-left:8px;padding-right:8px}
   table{font-size:12px}
   th,td{padding:7px 8px}
-  .tbl-wrap{margin:0 -8px;width:calc(100% + 16px);border-left:none;border-right:none}
-  .plate-grid{margin:0 -8px;width:calc(100% + 16px)}
 }
 @media (prefers-reduced-motion:no-preference){
   .ev{transition:background .15s ease}

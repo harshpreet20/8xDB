@@ -223,6 +223,23 @@ footer p{margin:0 0 6px}
   .bt-ts{order:3;width:100%}
 }
 
+/* ---------- live updates section ---------- */
+.lu-gate{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:20px;padding:14px 16px;border:1px dashed var(--rule);background:#F8F9FB}
+.lu-gate input[type=password]{font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border:1px solid var(--rule);background:var(--panel);min-width:200px}
+.lu-msg{font-size:12px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
+.lu-msg.err{color:var(--breach)}
+.lu-msg.ok{color:#20603A}
+.lu-admin{margin-top:16px;padding:16px;border:1px solid var(--rule);background:var(--panel)}
+.lu-admin textarea{width:100%;font-family:'IBM Plex Sans',sans-serif;font-size:14px;padding:10px;border:1px solid var(--rule);resize:vertical}
+.lu-actions{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.lu-subhead{font-family:'IBM Plex Sans Condensed',sans-serif;text-transform:uppercase;font-size:14px;margin:20px 0 10px}
+.lu-card{border:1px solid var(--rule);background:var(--panel);padding:12px 14px;margin-bottom:10px}
+.lu-card .bt-pos{margin-top:8px}
+.lu-card-actions{display:flex;gap:8px;margin-top:10px}
+.lu-card-actions button{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--rule);background:var(--panel);cursor:pointer}
+.lu-card-actions button.approve{border-color:#20603A;color:#20603A}
+.lu-card-actions button.reject{border-color:var(--breach);color:var(--breach)}
+
 </style>
 </head>
 <body>
@@ -1709,6 +1726,34 @@ footer p{margin:0 0 6px}
   </div>
 </section>
 
+<!-- ================= 13 LIVE UPDATES ================= -->
+<section id="live-updates">
+  <div class="sec-head">
+    <span class="sec-num">13</span>
+    <h2>Live updates</h2>
+    <span class="sec-note">Publicly visible once approved &middot; submission is password-gated</span>
+  </div>
+  <p class="lede">New evidence lands here first as an AI-drafted entry, reviewed by the case owner, then published. Anyone can see approved entries below; only the password holder can submit or approve new ones.</p>
+
+  <div id="lu-approved"><p class="lede" style="margin:0">No live updates published yet.</p></div>
+
+  <div class="lu-gate" id="lu-gate">
+    <input type="password" id="lu-password" placeholder="Admin password" autocomplete="off">
+    <button id="lu-unlock" class="chip">Unlock</button>
+    <span id="lu-gate-msg" class="lu-msg"></span>
+  </div>
+
+  <div class="lu-admin" id="lu-admin" hidden>
+    <textarea id="lu-rawtext" rows="6" placeholder="Paste the new chat excerpt, screenshot transcription, or a paraphrased call here..."></textarea>
+    <div class="lu-actions">
+      <button id="lu-analyze" class="chip f-breach">Analyze with AI &amp; save as draft</button>
+      <span id="lu-analyze-msg" class="lu-msg"></span>
+    </div>
+    <h3 class="lu-subhead">Pending drafts</h3>
+    <div id="lu-drafts"><p class="lede" style="margin:0">No drafts yet.</p></div>
+  </div>
+</section>
+
 <footer>
   <p>Compiled from four WhatsApp exports: 8X SPORTS group (739 lines, 10&ndash;29 Jul), 8x sports 1:1 (254 lines, 08&ndash;29 Jul), 8X Design Team 1:1 (23 lines, 14&ndash;29 Jul), 8X Dispatch 1:1 (13 lines, 20&ndash;28 Jul).</p>
   <p>Timestamps reproduced exactly as exported (IST, DD/MM/YY). Where WhatsApp export ordering differs from timestamp ordering, the timestamp governs. Media files referenced by their export filenames are retained in the source archives and are the primary exhibits.</p>
@@ -1961,6 +2006,117 @@ function idxSet(side,btn){
 document.getElementById('idx-all').onclick=e=>idxSet('all',e.currentTarget);
 document.getElementById('idx-vendor').onclick=e=>idxSet('Vendor',e.currentTarget);
 document.getElementById('idx-rcc').onclick=e=>idxSet('RCC',e.currentTarget);
+
+// ---------- Live updates: password-gated AI-assisted draft/approve pipeline ----------
+(function(){
+  const SB_URL = "https://qpzfnpoijxfvpbzpfogl.supabase.co";
+  const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwemZucG9panhmdnBienBmb2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjEzNDEsImV4cCI6MjA5OTYzNzM0MX0.gej_Q4ZPQsf8ulOG3XUFhc7IDkweigMfcXix-2zKdFw";
+  let currentPassword = null;
+
+  async function sbRpc(fn, args){
+    const r = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+      body: JSON.stringify(args)
+    });
+    return { ok: r.ok, status: r.status, json: await r.json().catch(()=>null) };
+  }
+
+  function renderDraft(container, row, showActions){
+    const p = row.payload || {};
+    const div = document.createElement('div');
+    div.className = 'lu-card';
+    let inner = `<div class="bt-title">${esc(p.title || '(untitled)')}</div>`;
+    inner += `<div class="bt-ts mono">${esc(p.ts || (p.d? p.d+' '+p.t : ''))} &middot; ${esc(row.status)}</div>`;
+    if(p.kind === 'backtrack' || (p.a && p.b)){
+      inner += `<div class="bt-pos a"><div class="bt-pos-label">${esc(p.a?.label||'Position A')}</div><div class="bt-pos-q">${esc(p.a?.q||'')}</div></div>`;
+      inner += `<div class="bt-pos b"><div class="bt-pos-label">${esc(p.b?.label||'Position B')}</div><div class="bt-pos-q">${esc(p.b?.q||'')}</div></div>`;
+      if(p.verdict) inner += `<div class="bt-verdict">${esc(p.verdict)}</div>`;
+    } else {
+      if(p.q) inner += `<blockquote class="ev-quote"><b>${esc(p.qw||'')}</b>&ldquo;${esc(p.q)}&rdquo;</blockquote>`;
+      if(p.note) inner += `<p class="ev-note">${esc(p.note)}</p>`;
+    }
+    if(showActions){
+      inner += `<div class="lu-card-actions">
+        <button class="approve" data-id="${row.id}" data-action="approved">Approve &amp; publish</button>
+        <button class="reject" data-id="${row.id}" data-action="rejected">Reject</button>
+      </div>`;
+    }
+    div.innerHTML = inner;
+    container.appendChild(div);
+  }
+
+  async function loadApproved(){
+    const el = document.getElementById('lu-approved');
+    const r = await fetch(`${SB_URL}/rest/v1/dashboard_updates?select=*&status=eq.approved&order=created_at.desc`, {
+      headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` }
+    });
+    const rows = await r.json().catch(()=>[]);
+    if(!Array.isArray(rows) || rows.length === 0){
+      el.innerHTML = '<p class="lede" style="margin:0">No live updates published yet.</p>';
+      return;
+    }
+    el.innerHTML = '';
+    rows.forEach(row => renderDraft(el, row, false));
+  }
+
+  async function loadDrafts(){
+    const el = document.getElementById('lu-drafts');
+    const res = await sbRpc('list_draft_updates', { pw: currentPassword });
+    if(!res.ok){ el.innerHTML = '<p class="lede" style="margin:0">Could not load drafts.</p>'; return; }
+    const rows = res.json || [];
+    if(rows.length === 0){ el.innerHTML = '<p class="lede" style="margin:0">No drafts yet.</p>'; return; }
+    el.innerHTML = '';
+    rows.forEach(row => renderDraft(el, row, true));
+    el.querySelectorAll('button[data-action]').forEach(btn=>{
+      btn.onclick = async () => {
+        btn.disabled = true;
+        const res2 = await sbRpc('set_update_status', { pw: currentPassword, p_id: btn.dataset.id, p_status: btn.dataset.action });
+        if(res2.ok){ loadDrafts(); loadApproved(); } else { btn.disabled = false; alert('Failed: ' + JSON.stringify(res2.json)); }
+      };
+    });
+  }
+
+  document.getElementById('lu-unlock').onclick = async () => {
+    const pw = document.getElementById('lu-password').value;
+    const msg = document.getElementById('lu-gate-msg');
+    if(!pw){ return; }
+    msg.textContent = 'Checking...'; msg.className = 'lu-msg';
+    const res = await sbRpc('verify_admin_password', { pw });
+    if(res.ok && res.json === true){
+      currentPassword = pw;
+      msg.textContent = 'Unlocked'; msg.className = 'lu-msg ok';
+      document.getElementById('lu-admin').hidden = false;
+      loadDrafts();
+    } else {
+      msg.textContent = 'Wrong password'; msg.className = 'lu-msg err';
+    }
+  };
+
+  document.getElementById('lu-analyze').onclick = async () => {
+    const raw = document.getElementById('lu-rawtext').value;
+    const msg = document.getElementById('lu-analyze-msg');
+    if(!currentPassword){ msg.textContent = 'Unlock first'; msg.className = 'lu-msg err'; return; }
+    if(!raw.trim()){ return; }
+    msg.textContent = 'Analyzing with AI...'; msg.className = 'lu-msg';
+    try{
+      const r = await fetch('/api/analyze-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: currentPassword, rawText: raw })
+      });
+      const j = await r.json();
+      if(!r.ok){ msg.textContent = 'Error: ' + (j.error||'unknown'); msg.className = 'lu-msg err'; return; }
+      msg.textContent = 'Draft saved below — review and approve/reject.'; msg.className = 'lu-msg ok';
+      document.getElementById('lu-rawtext').value = '';
+      loadDrafts();
+    }catch(e){
+      msg.textContent = 'Request failed: ' + e; msg.className = 'lu-msg err';
+    }
+  };
+
+  loadApproved();
+})();
 
 </script>
 </body>

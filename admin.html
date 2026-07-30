@@ -156,11 +156,41 @@ $('lu-signin').onclick = async () => {
 };
 $('lu-pw').addEventListener('keydown', e => { if(e.key === 'Enter') $('lu-signin').click(); });
 
+// Downscale + re-encode each screenshot before it ever gets near the request body —
+// phone screenshots are routinely 3-5MB each, and a few of those blow straight through
+// Vercel's ~4.5MB request-body limit ("Request Entity Too Large", a plain-text response
+// that isn't JSON — the crash the user hit). Capped to 1400px on the long edge, JPEG q0.72,
+// which keeps text/timestamps in screenshots easily readable while landing well under 1MB.
+function compressImage(file, maxDim = 1400, quality = 0.72){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.onload = () => {
+      let { width, height } = img;
+      if(width > maxDim || height > maxDim){
+        const scale = maxDim / Math.max(width, height);
+        width = Math.round(width * scale); height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    }; img.onerror = reject; img.src = reader.result; };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 $('lu-images').onchange = async (e) => {
   const files = [...e.target.files];
+  $('lu-files-msg').textContent = 'Compressing images...';
   for(const f of files){
-    const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
-    pendingImages.push({ dataUrl, name: f.name });
+    try{
+      const dataUrl = await compressImage(f);
+      pendingImages.push({ dataUrl, name: f.name });
+    }catch(err){
+      console.error('image compression failed for', f.name, err);
+    }
   }
   $('lu-files-msg').textContent = `${pendingImages.length} image(s) attached` + (zipChatText ? ', zip chat text loaded' : '');
 };
@@ -180,6 +210,9 @@ $('lu-zip').onchange = async (e) => {
   }
 };
 
+const MAX_TEXT_CHARS = 60000; // keeps a big zip/chat dump well clear of the request-body limit
+const MAX_IMAGES_PER_SUBMISSION = 6; // compressed images are small, but this still caps worst case
+
 $('lu-analyze').onclick = async () => {
   const msg = $('lu-analyze-msg');
   const { data: { session } } = await sb.auth.getSession();
@@ -188,14 +221,28 @@ $('lu-analyze').onclick = async () => {
   if(zipChatText) raw = (raw ? raw + '\n\n---\n\n' : '') + zipChatText;
   if(!raw.trim() && pendingImages.length === 0){ msg.textContent = 'Add text, a zip, or images first'; msg.className = 'lu-msg err'; return; }
 
+  let truncated = false;
+  if(raw.length > MAX_TEXT_CHARS){ raw = raw.slice(-MAX_TEXT_CHARS); truncated = true; } // keep the most recent (tail) content
+  const images = pendingImages.slice(0, MAX_IMAGES_PER_SUBMISSION);
+  const imagesDropped = pendingImages.length - images.length;
+
   msg.textContent = 'Analyzing with AI...'; msg.className = 'lu-msg';
   try{
     const r = await fetch('/api/analyze-update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ rawText: raw, images: pendingImages })
+      body: JSON.stringify({ rawText: raw, images })
     });
-    const j = await r.json();
+
+    const bodyText = await r.text();
+    let j;
+    try{ j = JSON.parse(bodyText); }
+    catch{
+      msg.textContent = `Server error (${r.status}): ${bodyText.slice(0,200) || 'no response body'}`;
+      msg.className = 'lu-msg err';
+      return;
+    }
+
     if(!r.ok){ msg.textContent = 'Error: ' + (j.error||'unknown'); msg.className = 'lu-msg err'; return; }
     if(!j.items || j.items.length === 0){ msg.textContent = 'AI found nothing extractable in that submission.'; msg.className = 'lu-msg'; return; }
 
@@ -209,7 +256,10 @@ $('lu-analyze').onclick = async () => {
       if(error) console.error('insert failed', error);
     }
 
-    msg.textContent = `${j.items.length} draft(s) saved below — review and approve/reject.`; msg.className = 'lu-msg ok';
+    let okMsg = `${j.items.length} draft(s) saved below — review and approve/reject.`;
+    if(truncated) okMsg += ' (text was long and got trimmed to the most recent part.)';
+    if(imagesDropped > 0) okMsg += ` (${imagesDropped} extra image(s) skipped, ${MAX_IMAGES_PER_SUBMISSION} max per submission.)`;
+    msg.textContent = okMsg; msg.className = 'lu-msg ok';
     $('lu-rawtext').value = '';
     pendingImages = []; zipChatText = '';
     $('lu-files-msg').textContent = '';

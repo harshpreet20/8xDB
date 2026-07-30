@@ -140,20 +140,38 @@ function setSignedInUI(){
 }
 
 async function initAuth(){
+  if(window.location.hash.includes('access_token')){
+    $('lu-gate-msg').textContent = 'Completing sign-in...'; $('lu-gate-msg').className = 'lu-msg';
+  }
   const { data: { session } } = await sb.auth.getSession();
-  if(session?.user?.email === OWNER_EMAIL){ setSignedInUI(); }
+  if(session?.user?.email === OWNER_EMAIL){
+    setSignedInUI();
+    history.replaceState(null, '', window.location.pathname); // strip the token out of the visible URL
+  }
 }
 initAuth();
 sb.auth.onAuthStateChange((_event, session) => {
-  if(session?.user?.email === OWNER_EMAIL) setSignedInUI();
+  if(session?.user?.email === OWNER_EMAIL){
+    setSignedInUI();
+    history.replaceState(null, '', window.location.pathname);
+  }
 });
 
 $('lu-send-code').onclick = async () => {
   const msg = $('lu-gate-msg');
-  msg.textContent = 'Sending code...'; msg.className = 'lu-msg';
-  const { error } = await sb.auth.signInWithOtp({ email: OWNER_EMAIL, options: { shouldCreateUser: true } });
+  msg.textContent = 'Sending link...'; msg.className = 'lu-msg';
+  // emailRedirectTo makes the "Sign in" link in the email land back on this exact
+  // page with a session, since the default email template only shows a link, not
+  // a typeable code (Supabase's stock magic-link template, not something this app
+  // controls). If nothing happens after clicking the email link, the deployment's
+  // URL likely needs to be added to Supabase → Authentication → URL Configuration →
+  // Redirect URLs as an allowed redirect target.
+  const { error } = await sb.auth.signInWithOtp({
+    email: OWNER_EMAIL,
+    options: { shouldCreateUser: true, emailRedirectTo: window.location.href }
+  });
   if(error){ msg.textContent = 'Error: ' + error.message; msg.className = 'lu-msg err'; return; }
-  msg.textContent = 'Code sent — check the inbox.'; msg.className = 'lu-msg ok';
+  msg.textContent = 'Link sent — open the email on this device and tap "Sign in". This page will unlock automatically.'; msg.className = 'lu-msg ok';
   $('lu-code').style.display = '';
   $('lu-verify-code').style.display = '';
 };

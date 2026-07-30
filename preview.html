@@ -117,7 +117,7 @@ footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);font-si
 </header>
 
 <section id="backtracks">
-  <div class="sec-head"><span class="sec-num">01</span><h2>Vendor backtracks</h2><span class="sec-note">6 reversals, both positions on record</span></div>
+  <div class="sec-head"><span class="sec-num">01</span><h2>Vendor backtracks</h2><span class="sec-note">7 reversals, both positions on record</span></div>
   <p class="bt-hint">&#9654; <b>Tap a card</b> to open it and see Position A next to Position B — the vendor's own words, contradicting itself.</p>
   <div id="bt-list"></div>
 </section>
@@ -183,7 +183,7 @@ footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--rule);font-si
 </section>
 
 <footer>
-  <p>Source: 4 exported WhatsApp threads. Full register with embedded exhibits: repo linked above. Compiled 29 Jul 2026.</p>
+  <p>Source: 4 exported WhatsApp threads plus one later dispatch-team exchange reported directly (screenshots pending upload as files for the exhibit archive). Full register with embedded exhibits: repo linked above. Compiled 29 Jul 2026, updated 30 Jul 2026.</p>
 </footer>
 
 </div>
@@ -231,6 +231,13 @@ const BACKTRACKS = [
     a: { label: "Position A — confirmed on record", q: "09 Jul 09:16: “Rib colored miljayegi naa?” → “Yes.” 14 Jul 15:27: “elastic rib will be done.” 15 Jul 18:27: “yes sir rib.”" },
     b: { label: "Position B — 29 Jul 16:05, delivered goods", q: "“NO RIB COLLARS / NO RIB SLEEVES.”" },
     verdict: "Five separate vendor confirmations, <b>zero of them honoured</b> in the finished product."
+  },
+  {
+    title: "Refund demanded in writing — vendor responds by invoicing for full payment and threatening same-day dispatch of the rejected goods",
+    ts: "29 Jul 17:35 → following day, 12:42 PM",
+    a: { label: "Position A — 29 Jul 17:35, formal written demand", q: "“I request that you accept the return of the jersey and process a full refund. ... I reserve my right to seek appropriate remedies under the Consumer Protection Act, 2019.” Followed at 18:53 by 8X ADMIN (+91 6378 727 108): “we cant commit anything before any confirmation sir as we are sending you the sample so we will share the further information when the parcel will be recieved !!” — no written delivery commitment given, despite being asked for one directly." },
+    b: { label: "Position B — following day, 12:42 PM, ~8x Dispatch Team (+91 92160 01183)", q: "Sends an invoice image captioned “DUE - 7605/-” plus a live HDFC SmartGateway payment link and: “Aapka order aaj shaam 6:00–7:00 baje tak tayyar ho jayega. ... anurodh hai ki aaj shaam 7:00 baje se pehle due amount clear kar dein, taaki hum aaj hi dispatch process shuru kar saken.” — demanding payment and proceeding toward dispatch of the exact goods under an active refund demand, with no reference to the refund request at all." },
+    verdict: "Client's immediate on-record response, same exchange: <b>12:43 PM</b> “I never accepted the jerseys?” and <b>12:45 PM</b> “What is this audacity of you to send this, I DONOT APPROVE THESE JERSEYS.” The vendor's invoice never engages with the refund demand — it treats a rejected, disputed order as a routine collections case. Note: the ₹7,605 due figure and its underlying per-piece rates (an internal order sheet surfaced in this exchange shows D24366 at ₹495/pc and a separate line “D24366A” at ₹185/pc for 17 pcs) do not reconcile with the ₹680/kit rate on record earlier and have not been explained."
   }
 ];
 

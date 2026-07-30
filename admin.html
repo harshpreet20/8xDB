@@ -20,7 +20,7 @@ h1{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:26
 .chip{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule);background:var(--panel);color:var(--ink-2);padding:7px 13px;cursor:pointer}
 .chip.f-breach{border-color:var(--breach);color:var(--breach)}
 .lu-gate{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:16px;border:1px dashed var(--rule);background:var(--panel)}
-.lu-gate input[type=text]{font-family:'IBM Plex Mono',monospace;font-size:13px;padding:8px 10px;border:1px solid var(--rule);background:var(--panel);min-width:200px}
+.lu-gate input[type=text],.lu-gate input[type=password]{font-family:'IBM Plex Mono',monospace;font-size:13px;padding:8px 10px;border:1px solid var(--rule);background:var(--panel);min-width:180px}
 .lu-msg{font-size:12px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
 .lu-msg.err{color:var(--breach)}
 .lu-msg.ok{color:#20603A}
@@ -48,12 +48,12 @@ h1{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:26
 <body>
 <div class="wrap">
   <h1>Owner sign-in</h1>
-  <p class="sub">Private admin page. Not linked from the public dashboard, not indexed. Sign-in is by one-time code sent to the authorized account only — no password, no email shown here.</p>
+  <p class="sub">Private admin page. Not linked from the public dashboard, not indexed.</p>
 
   <div class="lu-gate" id="lu-gate">
-    <button id="lu-send-code" class="chip">Send sign-in code</button>
-    <input type="text" id="lu-code" placeholder="6-digit code" autocomplete="off" style="display:none">
-    <button id="lu-verify-code" class="chip" style="display:none">Verify</button>
+    <input type="text" id="lu-email" placeholder="ID" autocomplete="username">
+    <input type="password" id="lu-pw" placeholder="Password" autocomplete="current-password">
+    <button id="lu-signin" class="chip">Sign in</button>
     <span id="lu-gate-msg" class="lu-msg"></span>
   </div>
 
@@ -80,10 +80,9 @@ import JSZip from "https://esm.sh/jszip@3";
 
 const SB_URL = "https://qpzfnpoijxfvpbzpfogl.supabase.co";
 const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwemZucG9panhmdnBienBmb2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjEzNDEsImV4cCI6MjA5OTYzNzM0MX0.gej_Q4ZPQsf8ulOG3XUFhc7IDkweigMfcXix-2zKdFw";
-// Not shown anywhere in the rendered UI — only used internally to request the OTP
-// and to check the returned session matches. The real access boundary is server-side
-// (Postgres RLS + api/analyze-update.js), not this constant's secrecy.
-const OWNER_EMAIL = "marketing.hotbot@gmail.com";
+// No email/ID is hardcoded here — the ID and password are typed at sign-in each time.
+// The real access boundary is server-side (Postgres RLS keyed on the authenticated
+// user's email + api/analyze-update.js verifying the session token), not obscurity.
 const sb = createClient(SB_URL, SB_ANON);
 
 let pendingImages = [];
@@ -140,51 +139,22 @@ function setSignedInUI(){
 }
 
 async function initAuth(){
-  if(window.location.hash.includes('access_token')){
-    $('lu-gate-msg').textContent = 'Completing sign-in...'; $('lu-gate-msg').className = 'lu-msg';
-  }
   const { data: { session } } = await sb.auth.getSession();
-  if(session?.user?.email === OWNER_EMAIL){
-    setSignedInUI();
-    history.replaceState(null, '', window.location.pathname); // strip the token out of the visible URL
-  }
+  if(session?.user){ setSignedInUI(); }
 }
 initAuth();
-sb.auth.onAuthStateChange((_event, session) => {
-  if(session?.user?.email === OWNER_EMAIL){
-    setSignedInUI();
-    history.replaceState(null, '', window.location.pathname);
-  }
-});
 
-$('lu-send-code').onclick = async () => {
+$('lu-signin').onclick = async () => {
+  const email = $('lu-email').value.trim();
+  const password = $('lu-pw').value;
   const msg = $('lu-gate-msg');
-  msg.textContent = 'Sending link...'; msg.className = 'lu-msg';
-  // emailRedirectTo makes the "Sign in" link in the email land back on this exact
-  // page with a session, since the default email template only shows a link, not
-  // a typeable code (Supabase's stock magic-link template, not something this app
-  // controls). If nothing happens after clicking the email link, the deployment's
-  // URL likely needs to be added to Supabase → Authentication → URL Configuration →
-  // Redirect URLs as an allowed redirect target.
-  const { error } = await sb.auth.signInWithOtp({
-    email: OWNER_EMAIL,
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.href }
-  });
-  if(error){ msg.textContent = 'Error: ' + error.message; msg.className = 'lu-msg err'; return; }
-  msg.textContent = 'Link sent — open the email on this device and tap "Sign in". This page will unlock automatically.'; msg.className = 'lu-msg ok';
-  $('lu-code').style.display = '';
-  $('lu-verify-code').style.display = '';
-};
-
-$('lu-verify-code').onclick = async () => {
-  const code = $('lu-code').value.trim();
-  const msg = $('lu-gate-msg');
-  if(!code) return;
-  msg.textContent = 'Verifying...'; msg.className = 'lu-msg';
-  const { data, error } = await sb.auth.verifyOtp({ email: OWNER_EMAIL, token: code, type: 'email' });
-  if(error || !data?.session){ msg.textContent = 'Error: ' + (error?.message||'verification failed'); msg.className = 'lu-msg err'; return; }
+  if(!email || !password){ msg.textContent = 'Enter ID and password'; msg.className = 'lu-msg err'; return; }
+  msg.textContent = 'Signing in...'; msg.className = 'lu-msg';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error || !data?.session){ msg.textContent = 'Error: ' + (error?.message||'sign-in failed'); msg.className = 'lu-msg err'; return; }
   setSignedInUI();
 };
+$('lu-pw').addEventListener('keydown', e => { if(e.key === 'Enter') $('lu-signin').click(); });
 
 $('lu-images').onchange = async (e) => {
   const files = [...e.target.files];

@@ -244,6 +244,7 @@ footer p{margin:0 0 6px}
     <div class="fact"><dt>Days to deliver</dt><dd>0 of 21<small>Nothing dispatched as of 29 Jul</small></dd></div>
     <div class="fact"><dt>Unanswered calls</dt><dd>11<small>Across 3 vendor numbers</small></dd></div>
     <div class="fact"><dt>Longest silence</dt><dd>145h<small>22 Jul to 28 Jul, spans the dispatch date</small></dd></div>
+    <div class="fact"><dt>Silence since last read</dt><dd id="live-silence">&mdash;<small id="live-silence-sub">Live &middot; updates automatically</small></dd></div>
   </dl>
 </header>
 
@@ -1718,6 +1719,31 @@ footer p{margin:0 0 6px}
 </div>
 
 <script>
+// Update this ISO timestamp whenever the vendor genuinely responds again — it is the
+// single source of truth for the live "Silence since last read" counter below.
+// Currently: 8x sports read the e58 challenge at 13:57 IST on 30 Jul 2026 and has not
+// replied since.
+const LAST_VENDOR_CONTACT = "2026-07-30T13:57:00+05:30";
+
+function updateLiveSilence(){
+  const el = document.getElementById('live-silence');
+  if(!el) return;
+  const since = new Date(LAST_VENDOR_CONTACT);
+  const now = new Date();
+  let ms = now - since;
+  if(ms < 0) ms = 0;
+  const totalMin = Math.floor(ms/60000);
+  const days = Math.floor(totalMin/1440);
+  const hours = Math.floor((totalMin%1440)/60);
+  const mins = totalMin%60;
+  let out = '';
+  if(days>0) out += days+'d ';
+  out += hours+'h ' + mins+'m';
+  el.textContent = out;
+}
+updateLiveSilence();
+setInterval(updateLiveSilence, 60000);
+
 const EVENTS = [
  {d:"08 Jul",t:"15:47",src:"1:1",k:"fact",title:"First contact",note:"Client opens the 1:1 thread with 8x sports. Voice call of 3 minutes at 15:47:51."},
  {d:"08 Jul",t:"15:56",src:"1:1",k:"fact",title:"Four binding requirements issued",q:"1. Main Logo thoda puffed up (logo utha utha sa 3D feel) 2. Side se Laal Patti 3. Breathable Non Transparent Kapda 4. Collar and Cuff pe off white color ka rib.",qw:"Client",note:"Requirement 4 is the origin of the rib obligation. Requirement 1 is the origin of the puff-logo obligation. Both are later withdrawn or unfulfilled by the vendor."},

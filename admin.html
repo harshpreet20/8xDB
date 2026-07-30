@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive, noimageindex">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner sign-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#12161C;--ink-2:#39424E;--ink-3:#6B7683;--paper:#EDEFF2;--panel:#FFFFFF;--rule:#C7CDD6;--rule-soft:#DFE3E9;--breach:#A81E12;--breach-bg:#FBE9E7;--vendor:#1B4A78;--vendor-bg:#E7EFF7;--client:#7A5D10;--client-bg:#FAF1DA}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding:40px 20px 80px}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+h1{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:700;font-size:26px;text-transform:uppercase;margin:0 0 6px}
+.sub{color:var(--ink-2);font-size:14px;margin:0 0 28px}
+.chip{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--rule);background:var(--panel);color:var(--ink-2);padding:7px 13px;cursor:pointer}
+.chip.f-breach{border-color:var(--breach);color:var(--breach)}
+.lu-gate{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:16px;border:1px dashed var(--rule);background:var(--panel)}
+.lu-gate input[type=text]{font-family:'IBM Plex Mono',monospace;font-size:13px;padding:8px 10px;border:1px solid var(--rule);background:var(--panel);min-width:200px}
+.lu-msg{font-size:12px;color:var(--ink-3);font-family:'IBM Plex Mono',monospace}
+.lu-msg.err{color:var(--breach)}
+.lu-msg.ok{color:#20603A}
+.lu-admin{margin-top:16px;padding:16px;border:1px solid var(--rule);background:var(--panel)}
+.lu-admin textarea{width:100%;font-family:'IBM Plex Sans',sans-serif;font-size:14px;padding:10px;border:1px solid var(--rule);resize:vertical}
+.lu-actions{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.lu-subhead{font-family:'IBM Plex Sans Condensed',sans-serif;text-transform:uppercase;font-size:14px;margin:20px 0 10px}
+.lu-card{border:1px solid var(--rule);background:var(--panel);padding:12px 14px;margin-bottom:10px}
+.bt-title{font-family:'IBM Plex Sans Condensed',sans-serif;font-weight:600;font-size:14.5px}
+.bt-ts{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-3);display:block;margin:2px 0 8px}
+.bt-pos{margin-top:8px;padding:9px 11px;border-left:3px solid var(--rule)}
+.bt-pos.a{border-color:var(--vendor);background:var(--vendor-bg)}
+.bt-pos.b{border-color:var(--breach);background:var(--breach-bg)}
+.bt-pos-label{font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
+.bt-pos-q{font-size:13px;font-style:italic}
+.bt-verdict{margin-top:9px;font-size:12.5px;color:var(--ink-2)}
+.ev-quote{border-left:2px solid var(--rule);padding:2px 0 2px 10px;margin:6px 0;font-size:13px;font-style:italic}
+.ev-note{font-size:13px;color:var(--ink-2)}
+.lu-card-actions{display:flex;gap:8px;margin-top:10px}
+.lu-card-actions button{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;border:1px solid var(--rule);background:var(--panel);cursor:pointer}
+.lu-card-actions button.approve{border-color:#20603A;color:#20603A}
+.lu-card-actions button.reject{border-color:var(--breach);color:var(--breach)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Owner sign-in</h1>
+  <p class="sub">Private admin page. Not linked from the public dashboard, not indexed. Sign-in is by one-time code sent to the authorized account only — no password, no email shown here.</p>
+
+  <div class="lu-gate" id="lu-gate">
+    <button id="lu-send-code" class="chip">Send sign-in code</button>
+    <input type="text" id="lu-code" placeholder="6-digit code" autocomplete="off" style="display:none">
+    <button id="lu-verify-code" class="chip" style="display:none">Verify</button>
+    <span id="lu-gate-msg" class="lu-msg"></span>
+  </div>
+
+  <div class="lu-admin" id="lu-admin" hidden>
+    <p class="lu-msg" style="margin:0 0 8px">Paste text, drop screenshots, or upload a WhatsApp export .zip. Combine any of the three in one submission.</p>
+    <textarea id="lu-rawtext" rows="6" placeholder="Paste new chat text, a paraphrased call, or any context here..."></textarea>
+    <div class="lu-actions">
+      <label class="chip" style="cursor:pointer">Add screenshots<input type="file" id="lu-images" accept="image/*" multiple hidden></label>
+      <label class="chip" style="cursor:pointer">Add chat export .zip<input type="file" id="lu-zip" accept=".zip" hidden></label>
+      <span id="lu-files-msg" class="lu-msg"></span>
+    </div>
+    <div class="lu-actions">
+      <button id="lu-analyze" class="chip f-breach">Analyze with AI &amp; save as drafts</button>
+      <span id="lu-analyze-msg" class="lu-msg"></span>
+    </div>
+    <h3 class="lu-subhead">Pending drafts</h3>
+    <div id="lu-drafts"><p class="lu-msg" style="margin:0">No drafts yet.</p></div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import JSZip from "https://esm.sh/jszip@3";
+
+const SB_URL = "https://qpzfnpoijxfvpbzpfogl.supabase.co";
+const SB_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwemZucG9panhmdnBienBmb2dsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQwNjEzNDEsImV4cCI6MjA5OTYzNzM0MX0.gej_Q4ZPQsf8ulOG3XUFhc7IDkweigMfcXix-2zKdFw";
+// Not shown anywhere in the rendered UI — only used internally to request the OTP
+// and to check the returned session matches. The real access boundary is server-side
+// (Postgres RLS + api/analyze-update.js), not this constant's secrecy.
+const OWNER_EMAIL = "marketing.hotbot@gmail.com";
+const sb = createClient(SB_URL, SB_ANON);
+
+let pendingImages = [];
+let zipChatText = "";
+
+const $ = id => document.getElementById(id);
+const escHtml = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function renderCard(container, row, showActions){
+  const p = row.payload || {};
+  const div = document.createElement('div');
+  div.className = 'lu-card';
+  let inner = `<div class="bt-title">${escHtml(p.title || '(untitled)')}</div>`;
+  inner += `<span class="bt-ts mono">${escHtml(p.ts || (p.d? p.d+' '+p.t : ''))} &middot; ${escHtml(row.status)}</span>`;
+  if(p.kind === 'backtrack' || (p.a && p.b)){
+    inner += `<div class="bt-pos a"><div class="bt-pos-label">${escHtml(p.a?.label||'Position A')}</div><div class="bt-pos-q">${escHtml(p.a?.q||'')}</div></div>`;
+    inner += `<div class="bt-pos b"><div class="bt-pos-label">${escHtml(p.b?.label||'Position B')}</div><div class="bt-pos-q">${escHtml(p.b?.q||'')}</div></div>`;
+    if(p.verdict) inner += `<div class="bt-verdict">${escHtml(p.verdict)}</div>`;
+  } else {
+    if(p.q) inner += `<blockquote class="ev-quote"><b>${escHtml(p.qw||'')}</b>&ldquo;${escHtml(p.q)}&rdquo;</blockquote>`;
+    if(p.note) inner += `<p class="ev-note">${escHtml(p.note)}</p>`;
+  }
+  if(showActions){
+    inner += `<div class="lu-card-actions">
+      <button class="approve" data-id="${row.id}" data-action="approved">Approve &amp; publish</button>
+      <button class="reject" data-id="${row.id}" data-action="rejected">Reject</button>
+    </div>`;
+  }
+  div.innerHTML = inner;
+  container.appendChild(div);
+}
+
+async function loadDrafts(){
+  const el = $('lu-drafts');
+  const { data, error } = await sb.from('dashboard_updates').select('*').eq('status', 'draft').order('created_at', { ascending: false });
+  if(error){ el.innerHTML = '<p class="lu-msg" style="margin:0">Could not load drafts.</p>'; return; }
+  if(!data || data.length === 0){ el.innerHTML = '<p class="lu-msg" style="margin:0">No drafts yet.</p>'; return; }
+  el.innerHTML = '';
+  data.forEach(row => renderCard(el, row, true));
+  el.querySelectorAll('button[data-action]').forEach(btn=>{
+    btn.onclick = async () => {
+      btn.disabled = true;
+      const { error: e2 } = await sb.from('dashboard_updates').update({ status: btn.dataset.action }).eq('id', btn.dataset.id);
+      if(!e2){ loadDrafts(); } else { btn.disabled = false; alert('Failed: ' + e2.message); }
+    };
+  });
+}
+
+function setSignedInUI(){
+  $('lu-gate').innerHTML = `<span class="lu-msg ok">Signed in</span> <button id="lu-signout" class="chip">Sign out</button>`;
+  $('lu-admin').hidden = false;
+  $('lu-signout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  loadDrafts();
+}
+
+async function initAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session?.user?.email === OWNER_EMAIL){ setSignedInUI(); }
+}
+initAuth();
+sb.auth.onAuthStateChange((_event, session) => {
+  if(session?.user?.email === OWNER_EMAIL) setSignedInUI();
+});
+
+$('lu-send-code').onclick = async () => {
+  const msg = $('lu-gate-msg');
+  msg.textContent = 'Sending code...'; msg.className = 'lu-msg';
+  const { error } = await sb.auth.signInWithOtp({ email: OWNER_EMAIL, options: { shouldCreateUser: true } });
+  if(error){ msg.textContent = 'Error: ' + error.message; msg.className = 'lu-msg err'; return; }
+  msg.textContent = 'Code sent — check the inbox.'; msg.className = 'lu-msg ok';
+  $('lu-code').style.display = '';
+  $('lu-verify-code').style.display = '';
+};
+
+$('lu-verify-code').onclick = async () => {
+  const code = $('lu-code').value.trim();
+  const msg = $('lu-gate-msg');
+  if(!code) return;
+  msg.textContent = 'Verifying...'; msg.className = 'lu-msg';
+  const { data, error } = await sb.auth.verifyOtp({ email: OWNER_EMAIL, token: code, type: 'email' });
+  if(error || !data?.session){ msg.textContent = 'Error: ' + (error?.message||'verification failed'); msg.className = 'lu-msg err'; return; }
+  setSignedInUI();
+};
+
+$('lu-images').onchange = async (e) => {
+  const files = [...e.target.files];
+  for(const f of files){
+    const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f); });
+    pendingImages.push({ dataUrl, name: f.name });
+  }
+  $('lu-files-msg').textContent = `${pendingImages.length} image(s) attached` + (zipChatText ? ', zip chat text loaded' : '');
+};
+
+$('lu-zip').onchange = async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  $('lu-files-msg').textContent = 'Reading zip...';
+  try{
+    const zip = await JSZip.loadAsync(file);
+    const chatFile = Object.keys(zip.files).find(n => n.toLowerCase().endsWith('_chat.txt') || n.toLowerCase().endsWith('chat.txt'));
+    if(!chatFile){ $('lu-files-msg').textContent = 'No _chat.txt found in zip.'; return; }
+    zipChatText = await zip.files[chatFile].async('string');
+    $('lu-files-msg').textContent = `Loaded ${chatFile} (${zipChatText.length} chars)` + (pendingImages.length ? `, ${pendingImages.length} image(s) attached` : '');
+  }catch(err){
+    $('lu-files-msg').textContent = 'Failed to read zip: ' + err.message;
+  }
+};
+
+$('lu-analyze').onclick = async () => {
+  const msg = $('lu-analyze-msg');
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session){ msg.textContent = 'Sign in first'; msg.className = 'lu-msg err'; return; }
+  let raw = $('lu-rawtext').value || '';
+  if(zipChatText) raw = (raw ? raw + '\n\n---\n\n' : '') + zipChatText;
+  if(!raw.trim() && pendingImages.length === 0){ msg.textContent = 'Add text, a zip, or images first'; msg.className = 'lu-msg err'; return; }
+
+  msg.textContent = 'Analyzing with AI...'; msg.className = 'lu-msg';
+  try{
+    const r = await fetch('/api/analyze-update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ rawText: raw, images: pendingImages })
+    });
+    const j = await r.json();
+    if(!r.ok){ msg.textContent = 'Error: ' + (j.error||'unknown'); msg.className = 'lu-msg err'; return; }
+    if(!j.items || j.items.length === 0){ msg.textContent = 'AI found nothing extractable in that submission.'; msg.className = 'lu-msg'; return; }
+
+    for(const item of j.items){
+      const { error } = await sb.from('dashboard_updates').insert({
+        kind: item.kind === 'backtrack' ? 'backtrack' : 'event',
+        payload: item,
+        status: 'draft',
+        source_text: raw.slice(0, 5000)
+      });
+      if(error) console.error('insert failed', error);
+    }
+
+    msg.textContent = `${j.items.length} draft(s) saved below — review and approve/reject.`; msg.className = 'lu-msg ok';
+    $('lu-rawtext').value = '';
+    pendingImages = []; zipChatText = '';
+    $('lu-files-msg').textContent = '';
+    $('lu-images').value = ''; $('lu-zip').value = '';
+    loadDrafts();
+  }catch(e){
+    msg.textContent = 'Request failed: ' + e; msg.className = 'lu-msg err';
+  }
+};
+</script>
+</body>
+</html>

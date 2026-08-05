@@ -1859,10 +1859,10 @@ const BACKTRACKS = [
   },
   {
     title: "Colour code cited as the standard — no colour code exists anywhere in the record",
-    ts: "29 Jul, 17:23",
+    ts: "29 Jul, 17:23, unresolved through the 05 Aug sample receipt",
     a: { label: "Position A", ref: 47, q: "“but sir we eaxctly matched the colour code believe me.”" },
-    b: { label: "Position B", ref: null, q: "No Pantone, hex, CMYK value or physical swatch appears anywhere in the four exported threads (all 54 timeline entries). The phrase “colour code” occurs exactly once — in this defence." },
-    verdict: "The vendor <b>cannot evidence the standard it claims to have met.</b>"
+    b: { label: "Position B", ref: null, q: "No Pantone, hex, CMYK value or physical swatch appears anywhere in the four exported threads (all 54 timeline entries). The phrase “colour code” occurs exactly once — in this defence. The vendor still has not produced one: the only hex reading on file is the client's own, taken from the physical sample on 05 Aug and cross-checked with independent third-party hex checkers (#BFE1E2 approved vs #4F7F99 delivered — see the backtrack below)." },
+    verdict: "The vendor <b>cannot evidence the standard it claims to have met</b> — and did not produce one even once the goods it claimed matched were physically in hand for inspection."
   },
   {
     title: "Teal confirmed and called “perfect” — delivered as light blue, twice",
@@ -1904,7 +1904,14 @@ const BACKTRACKS = [
     ts: "29 Jul (call) → 30 Jul 12:42",
     a: { label: "Position A", ref: "51a", q: "29 Jul, video call: “We will send you one jersey today and you test that.” Reported by the client; no written record of the call exists, but the commitment is dated and specific — same-day sample, for testing." },
     b: { label: "Position B", ref: 52, q: "30 Jul 12:42: no sample arrives. Instead, ~8x Dispatch Team sends an invoice captioned “DUE - 7605/-” with a live payment link, demanding payment and pushing same-day dispatch of the full, already-rejected order." },
-    verdict: "The promise made on the call and the action taken the next morning are opposites: <b>test-sample vs. pay-and-ship.</b> Combined with e56/e57 (backtrack #8), the same 18-hour window contains a verbal sampling commitment, a written non-answer, a payment invoice, and a “we're resolving this” message — four different postures, no refund."
+    verdict: "The promise made on the call and the action taken the next morning are opposites: <b>test-sample vs. pay-and-ship.</b> Combined with e56/e57 (backtrack #8), the same 18-hour window contains a verbal sampling commitment, a written non-answer, a payment invoice, and a “we're resolving this” message — four different postures, no refund. When the sample finally did arrive, on 05 Aug — a week after the “today” promise — the physical inspection matched the client's original complaint point for point rather than resolving it (see the capstone backtrack below)."
+  },
+  {
+    title: "Sample finally arrives — confirms, rather than resolves, every disputed spec point",
+    ts: "29 Jul (“done perfectly”, “eaxctly matched”) → 05 Aug (physical sample inspected)",
+    a: { label: "Vendor's running position", ref: 47, q: "29 Jul 17:23: “but sir we eaxctly matched the colour code believe me.” 17:30: “the color has been done perfectly according to the approved details.” No defect was ever conceded on colour, embroidery, stitching, panel alignment or finish." },
+    b: { label: "Physical sample, inspected on receipt 05 Aug", ref: null, q: "Seven deficiencies recorded against the approved mockup and spec: (1) colour — light blue delivered vs teal spec, #BFE1E2 approved vs #4F7F99 delivered on independent hex-checker verification; (2) embroidery thread colour incorrect, not properly sublimated; (3) stitching poor and inconsistent; (4) visible panel misalignment throughout; (5) overall finish substandard; (6) white surface specks/contamination on the fabric; (7) loose, untrimmed thread ends at a zippered pocket seam." },
+    verdict: "The one exhibit the vendor could not talk around — the physical goods themselves — <b>confirms the client's 29 Jul objections rather than answering them.</b> Every category the vendor called “perfect” before the client had the goods in hand failed inspection once the client did."
   }
 ];
 
